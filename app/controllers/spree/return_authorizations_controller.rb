@@ -12,13 +12,23 @@ module Spree
 
     def new
       @return_authorization = @order.return_authorizations.build
-      load_form_data
+      load_form_data_for_new_return
+      existing_inventory_ids
     end
 
     def create
+      existing_ids = existing_inventory_ids
+      return_item_attributes = params[:return_authorization][:return_items_attributes] if params[:return_authorization]
+
+      if return_item_attributes
+        inventory_unit_ids = return_item_attributes.values.map { |x| x[:inventory_unit_id].to_i }.compact
+        no_existing_return_items = !inventory_unit_ids.any? { |i| existing_ids.include?(i) }
+      end
+
+      flash[:error] = 'Invalid items' unless no_existing_return_items
       @return_authorization = @order.return_authorizations.build(create_return_authorization_params)
 
-      if @return_authorization.save
+      if no_existing_return_items && @return_authorization.save
         respond_with(@return_authorization) do |format|
           format.html do
             flash[:success] = Spree.t(:successfully_created, resource: 'Item return')
@@ -27,9 +37,9 @@ module Spree
         end
       else
         respond_with(@return_authorization) do |format|
-          flash.now[:error] = @return_authorization.errors.full_messages.to_sentence
+          flash.now[:error] = @return_authorization.errors.full_messages.to_sentence unless flash[:error]
           format.html do
-            load_form_data
+            load_form_data_for_new_return
             render action: :new
           end
         end
@@ -41,19 +51,33 @@ module Spree
 
     private
 
+    def existing_inventory_ids
+      @existing_inventory_ids ||= @order.return_authorizations.includes(:inventory_units).map { |x| x.inventory_units.map { |y| y.id  } }.flatten.uniq
+    end
+
     def create_return_authorization_params
       return_authorization_params.merge(user_initiated: true)
     end
 
     def load_form_data
+      load_associated_return_items
+      load_return_authorization_reasons
+    end
+
+    def load_form_data_for_new_return
       load_return_items
       load_return_authorization_reasons
+    end
+
+
+    def load_associated_return_items
+      @form_return_items = @return_authorization.return_items.sort_by(&:inventory_unit_id).uniq
     end
 
     # To satisfy how nested attributes works we want to create placeholder ReturnItems for
     # any InventoryUnits that have not already been added to the ReturnAuthorization.
     def load_return_items
-      all_inventory_units = @order.inventory_units
+      all_inventory_units = @return_authorization.order.inventory_units
       associated_inventory_units = @return_authorization.return_items.map(&:inventory_unit)
       unassociated_inventory_units = all_inventory_units - associated_inventory_units
 
@@ -61,8 +85,9 @@ module Spree
         @return_authorization.return_items.build(inventory_unit: new_unit).tap(&:set_default_pre_tax_amount)
       end
 
-      @form_return_items = (@return_authorization.return_items + new_return_items).sort_by(&:inventory_unit_id).uniq
+      @form_return_items = new_return_items.sort_by(&:inventory_unit_id).uniq
     end
+
 
     def load_return_authorization_reasons
       @return_authorization_reasons = Spree::ReturnAuthorizationReason.active

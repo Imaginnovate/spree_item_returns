@@ -20,8 +20,8 @@
       <%= f.fields_for :return_items, @form_return_items do |item_fields| %>
         <% return_item = item_fields.object %>
         <% inventory_unit = return_item.inventory_unit %>
-
-        <% editable ||= inventory_unit.shipped? && @return_authorization.allow_return_item_changes? && !return_item.reimbursement %>
+        <% existing = @existing_inventory_ids.detect { |e| e == inventory_unit.id } %>
+        <% editable ||= inventory_unit.shipped? && @return_authorization.allow_return_item_changes? && !return_item.reimbursement && !existing %>
 
         <% if line_item_returnable?(inventory_unit.line_item) %>
           <tr>

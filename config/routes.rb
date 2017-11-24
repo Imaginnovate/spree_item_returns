@@ -10,6 +10,8 @@ Spree::Core::Engine.routes.draw do
         collection do
           get :my_returns
           get 'my_return/:id', to: 'return_authorizations#my_return'
+          get 'new_return/:order_id', to: 'return_authorizations#new_return'
+          post :user_return
         end
       end
     end
