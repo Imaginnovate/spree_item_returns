@@ -30,14 +30,22 @@ Spree::Api::V1::ReturnAuthorizationsController.class_eval do
     if return_item_attributes
       inventory_unit_ids = return_item_attributes.values.map { |x| x[:inventory_unit_id].to_i }.compact
       no_existing_return_items = !inventory_unit_ids.any? { |i| existing_ids.include?(i) }
+      # Check whether all inventory units are related to this order or no
+      all_inventory_unit_ids = @order.inventory_units.map { |i| i.id }
+      no_other_order_inventory_ids = !inventory_unit_ids.any? { |i| all_inventory_unit_ids.exclude?(i) }
+      is_valid = no_existing_return_items && no_other_order_inventory_ids
     end
 
     @return_authorization = @order.return_authorizations.build(create_return_authorization_params)
     @return_authorization.validate
-    if no_existing_return_items && @return_authorization.save
+    if is_valid && @return_authorization.save
       respond_with(@return_authorization, status: 201, default_template: :show)
     else
-      invalid_resource!(@return_authorization)
+      if is_valid
+        invalid_resource!(@return_authorization)
+      else
+        render json: { errors: 'Invalid inventory ids' }, status: :unprocessable_entity
+      end
     end
   end
 
