@@ -32,7 +32,7 @@ module Spree
       flash[:error] = 'Invalid items' unless is_valid
       @return_authorization = @order.return_authorizations.build(create_return_authorization_params)
 
-      if is_validq && @return_authorization.save
+      if is_valid && @return_authorization.save
         respond_with(@return_authorization) do |format|
           format.html do
             flash[:success] = Spree.t(:successfully_created, resource: 'Item return')
