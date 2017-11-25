@@ -23,12 +23,16 @@ module Spree
       if return_item_attributes
         inventory_unit_ids = return_item_attributes.values.map { |x| x[:inventory_unit_id].to_i }.compact
         no_existing_return_items = !inventory_unit_ids.any? { |i| existing_ids.include?(i) }
+        # Check whether all inventory units are related to this order or no
+        all_inventory_unit_ids = @order.inventory_units.map { |i| i.id }
+        no_other_order_inventory_ids = !inventory_unit_ids.any? { |i| all_inventory_unit_ids.exclude?(i) }
+        is_valid = no_existing_return_items && no_other_order_inventory_ids
       end
 
-      flash[:error] = 'Invalid items' unless no_existing_return_items
+      flash[:error] = 'Invalid items' unless is_valid
       @return_authorization = @order.return_authorizations.build(create_return_authorization_params)
 
-      if no_existing_return_items && @return_authorization.save
+      if is_validq && @return_authorization.save
         respond_with(@return_authorization) do |format|
           format.html do
             flash[:success] = Spree.t(:successfully_created, resource: 'Item return')
