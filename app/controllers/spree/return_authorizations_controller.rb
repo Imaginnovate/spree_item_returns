@@ -5,6 +5,7 @@ module Spree
     before_action :load_return_authorization, only: :show
     before_action :load_form_data, only: :show
     before_action :check_for_returnable_products_in_order, only: :new
+    before_action :existing_inventory_ids, only: :show
 
     def index
       @return_authorizations = spree_current_user.return_authorizations.includes(:order).order(created_at: :desc)
@@ -98,7 +99,7 @@ module Spree
     end
 
     def load_order
-      @order = spree_current_user.orders.shipped.find_by(number: params[:order_id])
+      @order = spree_current_user.orders.delivered.find_by(number: params[:order_id])
 
       unless @order
         flash[:error] = Spree.t('order_not_found')

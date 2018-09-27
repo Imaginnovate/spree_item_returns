@@ -13,7 +13,7 @@
         <th><%= Spree.t(:charged) %></th>
         <th><%= Spree.t(:pre_tax_refund_amount) %></th>
         <th><%= Spree.t(:return_options) %></th>
-        <th><%= Spree.t(:exchange_for) %></th>
+<!--        <th><%#= Spree.t(:exchange_for) %></th>-->
       </tr>
     </thead>
     <tbody>
@@ -21,8 +21,7 @@
         <% return_item = item_fields.object %>
         <% inventory_unit = return_item.inventory_unit %>
         <% existing = @existing_inventory_ids.detect { |e| e == inventory_unit.id } %>
-        <% editable ||= inventory_unit.shipped? && @return_authorization.allow_return_item_changes? && !return_item.reimbursement && !existing %>
-
+        <% editable ||= inventory_unit.line_item.delivered? && @return_authorization.allow_return_item_changes? && !return_item.reimbursement && !existing %>
         <% if line_item_returnable?(inventory_unit.line_item) %>
           <tr>
             <td class="inventory-unit-checkbox">
@@ -47,19 +46,19 @@
                 <%= radio_button_tag inventory_unit.id, 'refund', refund_for_item_return?(return_item), class: 'return-options' %>
                 <label for=<%= "#{ inventory_unit.id }_refund" %>><%= Spree.t(:refund) %></label>
 
-                <%= radio_button_tag inventory_unit.id, 'exchange_for', exchange_for_item_return?(return_item), class: 'return-options' %>
-                <label for=<%= "#{ inventory_unit.id }_exchange_for" %>><%= Spree.t(:exchange) %></label>
+                <%#= radio_button_tag inventory_unit.id, 'exchange_for', exchange_for_item_return?(return_item), class: 'return-options' %>
+<!--                <label for=<%#= "#{ inventory_unit.id }_exchange_for" %>><%#= Spree.t(:exchange) %></label>-->
               <% end %>
             </td>
-            <td>
-              <% if editable %>
-                <% if return_item.exchange_processed? %>
-                  <%= return_item.exchange_variant.exchange_name %>
-                <% else %>
-                  <%= item_fields.collection_select :exchange_variant_id, return_item.eligible_exchange_variants, :id, :exchange_name, {}, { class: " return-item-exchange-selection form-control", disabled: display_only } %>
-                <% end %>
-              <% end %>
-            </td>
+<!--            <td>-->
+              <%# if editable %>
+                <%# if return_item.exchange_processed? %>
+                  <%#= return_item.exchange_variant.exchange_name %>
+                <%# else %>
+                  <%#= item_fields.collection_select :exchange_variant_id, return_item.eligible_exchange_variants, :id, :exchange_name, {}, { class: " return-item-exchange-selection form-control", disabled: display_only } %>
+                <%# end %>
+              <%# end %>
+<!--            </td>-->
           </tr>
         <% end %>
       <% end %>

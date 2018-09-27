@@ -10,4 +10,7 @@ Spree::Order.class_eval do
     line_items.any?(&:is_returnable?)
   end
 
+  def any_item_delivered?
+    line_items.any?(&:delivered?)
+  end
 end
